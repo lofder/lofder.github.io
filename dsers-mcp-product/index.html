@@ -20,6 +20,8 @@
       <span class="tag">Wix</span>
       <span class="tag">WooCommerce</span>
       <span class="tag">MCP</span>
+      <span class="tag">TypeScript</span>
+      <span class="tag">Smithery</span>
       <span class="tag">AI Agent</span>
       <span class="tag">Batch</span>
     </div>
@@ -33,7 +35,7 @@
       AI-powered product import tool built on DSers — one sentence replaces the entire import-edit-push workflow
     </div>
     <div class="meta">
-      Built on <a href="https://www.dsers.com">DSers</a> · Python · MCP · 2026.03
+      Built on <a href="https://www.dsers.com">DSers</a> · TypeScript · MCP · <a href="https://smithery.ai/server/@dsersx/product-mcp">Smithery</a> · 2026.03
     </div>
   </header>
 
@@ -175,10 +177,11 @@
     <table>
       <tr><th style="width:30%">项目 / Item</th><th>说明 / Description</th></tr>
       <tr><td>协议 / Protocol</td><td>MCP (Model Context Protocol) — AI agent 标准工具协议</td></tr>
-      <tr><td>语言 / Language</td><td>Python 3.10+</td></tr>
-      <tr><td>依赖 / Dependencies</td><td>httpx, python-dotenv, mcp</td></tr>
+      <tr><td>语言 / Language</td><td>TypeScript (Node.js 18+)</td></tr>
+      <tr><td>依赖 / Dependencies</td><td>@modelcontextprotocol/sdk, zod, @smithery/sdk</td></tr>
       <tr><td>商品来源 / Source</td><td>AliExpress, Alibaba, 1688</td></tr>
       <tr><td>推送目标 / Target</td><td>Shopify, Wix, WooCommerce（通过 DSers / via DSers）</td></tr>
+      <tr><td>发布平台 / Registry</td><td><a href="https://smithery.ai/server/@dsersx/product-mcp">Smithery</a> — 在线连接或从 GitHub 本地安装 / Online connect or local install from GitHub</td></tr>
       <tr><td>架构模式 / Pattern</td><td>公开工作流契约 + 私有平台适配器 / Public workflow contracts + private platform adapters</td></tr>
       <tr><td>状态管理 / State</td><td>本地 JSON job 文件，预览/确认两阶段 / Local JSON jobs, preview+confirm two-phase</td></tr>
       <tr><td>安全设计 / Security</td><td>不暴露平台 API 路径、认证方式、原始请求结构 / No exposed API paths, auth methods, or raw request structures</td></tr>
@@ -202,8 +205,8 @@
 
     <p><span class="status-tag" style="background:#d1fae5;color:#065f46;">Released — Open Source</span></p>
 
-    <p>完整导入-编辑-推送链路已跑通，支持批量导入、多店铺推送、多来源混合、Shopify 运费模板自动发现。代码开源于 <a href="https://github.com/lofder/dsers-mcp-product">GitHub</a>。</p>
-    <p>Full import-edit-push pipeline verified. Supports batch import, multi-store push, mixed sources, and Shopify shipping profile auto-discovery. Open-sourced on <a href="https://github.com/lofder/dsers-mcp-product">GitHub</a>.</p>
+    <p>完整导入-编辑-推送链路已跑通，支持批量导入、多店铺推送、多来源混合、Shopify 运费模板自动发现。TypeScript 为主维护版本，已发布到 <a href="https://smithery.ai/server/@dsersx/product-mcp">Smithery</a>（支持在线连接，Free 计划 25K RPCs/月），也可从 <a href="https://github.com/lofder/dsers-mcp-product">GitHub</a> 克隆本地运行。同时提供 <a href="https://github.com/lofder/dsers-mcp-product-py">Python 版本</a>（维护模式）。</p>
+    <p>Full import-edit-push pipeline verified. Supports batch import, multi-store push, mixed sources, and Shopify shipping profile auto-discovery. TypeScript is the primary maintained version, published on <a href="https://smithery.ai/server/@dsersx/product-mcp">Smithery</a> (online connect, Free plan 25K RPCs/month), or clone from <a href="https://github.com/lofder/dsers-mcp-product">GitHub</a> to run locally. A <a href="https://github.com/lofder/dsers-mcp-product-py">Python version</a> is also available (maintenance mode).</p>
 
   </article>
 
