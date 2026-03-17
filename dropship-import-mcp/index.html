@@ -15,9 +15,13 @@
     <div class="tags">
       <span class="tag">DSers</span>
       <span class="tag">AliExpress</span>
+      <span class="tag">1688</span>
       <span class="tag">Shopify</span>
+      <span class="tag">Wix</span>
+      <span class="tag">WooCommerce</span>
       <span class="tag">MCP</span>
       <span class="tag">AI Agent</span>
+      <span class="tag">Batch</span>
     </div>
     <div class="date">2026.03</div>
   </div>
@@ -99,11 +103,11 @@
 
     <table>
       <tr><th>MCP 工具</th><th>功能 / Function</th><th>替代操作 / Replaces</th></tr>
-      <tr><td><code>prepare_import_candidate</code></td><td>解析商品链接，应用规则，生成预览</td><td>找商品 + 导入 + 编辑</td></tr>
+      <tr><td><code>prepare_import_candidate</code></td><td>解析商品链接（单条/批量），应用规则，生成预览</td><td>找商品 + 导入 + 编辑</td></tr>
       <tr><td><code>get_import_preview</code></td><td>推送前预览变更</td><td>检查编辑结果</td></tr>
-      <tr><td><code>confirm_push_to_store</code></td><td>推送到 Shopify</td><td>推送 + 发布设置</td></tr>
+      <tr><td><code>confirm_push_to_store</code></td><td>推送到店铺（单条/批量/多店铺）</td><td>推送 + 发布设置</td></tr>
       <tr><td><code>validate_rules</code></td><td>校验定价/内容规则</td><td>价格规则设置</td></tr>
-      <tr><td><code>get_rule_capabilities</code></td><td>查询可用规则</td><td>（新增能力）</td></tr>
+      <tr><td><code>get_rule_capabilities</code></td><td>查询店铺（含运费模板）和可用规则</td><td>（新增能力）</td></tr>
       <tr><td><code>set_product_visibility</code></td><td>上架/下架控制</td><td>可见性设置</td></tr>
       <tr><td><code>get_job_status</code></td><td>查询任务状态</td><td>等待推送结果</td></tr>
     </table>
@@ -138,11 +142,19 @@
       </tr>
       <tr>
         <td><strong>批量铺货</strong><br>Bulk import</td>
-        <td>"把这 5 个速卖通链接全部导入，价格统一乘 2.5，全部先放后台。"<br>"Import all 5 links, uniform 2.5x pricing, all to backend."</td>
+        <td>"把这 5 个链接全部导入，价格统一乘 2.5，全部先放后台。"<br>"Import all 5 links, uniform 2.5x pricing, all to backend."</td>
       </tr>
       <tr>
-        <td><strong>替换供应商</strong><br>Swap supplier</td>
-        <td>"换成这个新链接的供应商，价格和标题保持不变。"<br>"Switch to new supplier link, keep price and title."</td>
+        <td><strong>多店铺同步</strong><br>Multi-store</td>
+        <td>"导入这个商品，同时推送到我的 Shopify 和 Wix 店铺。"<br>"Import and push to both my Shopify and Wix stores."</td>
+      </tr>
+      <tr>
+        <td><strong>混合来源批量</strong><br>Mixed source</td>
+        <td>"导入这些链接（速卖通 + 1688 混合），把能导入的全部推送。"<br>"Import these links (AliExpress + 1688 mixed), push all valid ones."</td>
+      </tr>
+      <tr>
+        <td><strong>指定运费模板</strong><br>Shipping profile</td>
+        <td>"推送这个商品，使用 'General profile' 而不是默认的运费模板。"<br>"Push using 'General profile' instead of the default shipping profile."</td>
       </tr>
       <tr>
         <td><strong>推送前检查</strong><br>Pre-push preview</td>
@@ -151,6 +163,10 @@
       <tr>
         <td><strong>调整可见性</strong><br>Visibility</td>
         <td>"把这个商品从后台改成上架到在线商店。"<br>"Change from backend-only to published."</td>
+      </tr>
+      <tr>
+        <td><strong>失败重试</strong><br>Retry</td>
+        <td>"上次推送失败了，再推送一次到同一个店铺。"<br>"The last push failed, try pushing again to the same store."</td>
       </tr>
     </table>
 
@@ -161,8 +177,8 @@
       <tr><td>协议 / Protocol</td><td>MCP (Model Context Protocol) — AI agent 标准工具协议</td></tr>
       <tr><td>语言 / Language</td><td>Python 3.10+</td></tr>
       <tr><td>依赖 / Dependencies</td><td>httpx, python-dotenv, mcp</td></tr>
-      <tr><td>商品来源 / Source</td><td>AliExpress（速卖通）</td></tr>
-      <tr><td>推送目标 / Target</td><td>Shopify（通过 DSers / via DSers）</td></tr>
+      <tr><td>商品来源 / Source</td><td>AliExpress, Alibaba, 1688</td></tr>
+      <tr><td>推送目标 / Target</td><td>Shopify, Wix, WooCommerce（通过 DSers / via DSers）</td></tr>
       <tr><td>架构模式 / Pattern</td><td>公开工作流契约 + 私有平台适配器 / Public workflow contracts + private platform adapters</td></tr>
       <tr><td>状态管理 / State</td><td>本地 JSON job 文件，预览/确认两阶段 / Local JSON jobs, preview+confirm two-phase</td></tr>
       <tr><td>安全设计 / Security</td><td>不暴露平台 API 路径、认证方式、原始请求结构 / No exposed API paths, auth methods, or raw request structures</td></tr>
@@ -184,10 +200,10 @@
 
     <h2>七、项目状态 / Project Status</h2>
 
-    <p><span class="status-tag">Testing — Private Repository</span></p>
+    <p><span class="status-tag" style="background:#d1fae5;color:#065f46;">Released — Open Source</span></p>
 
-    <p>当前正在跑通完整的导入-编辑-推送链路，确保各种边界情况正确处理。预计近期公开发布。</p>
-    <p>Currently running through the full import-edit-push pipeline, verifying edge case handling. Public release planned soon.</p>
+    <p>完整导入-编辑-推送链路已跑通，支持批量导入、多店铺推送、多来源混合、Shopify 运费模板自动发现。代码开源于 <a href="https://github.com/lofder/dsers-dropship-mcp">GitHub</a>。</p>
+    <p>Full import-edit-push pipeline verified. Supports batch import, multi-store push, mixed sources, and Shopify shipping profile auto-discovery. Open-sourced on <a href="https://github.com/lofder/dsers-dropship-mcp">GitHub</a>.</p>
 
   </article>
 
