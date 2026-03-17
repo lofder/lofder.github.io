@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 一句话铺货 — 我的人工智障</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="container">
+  <nav><a href="../">← 我的人工智障 / My A.I.</a></nav>
+
+  <header>
+    <h1>AI 一句话铺货 / Dropship Import MCP</h1>
+    <div class="subtitle">
+      DSers 解决了 dropshipping 的大部分痛苦。但还有一块没动：每天重复的选品-编辑-推送。<br>
+      DSers solved most of the dropshipping pain. But one piece remains untouched: the daily grind of curating, editing, and pushing products.
+    </div>
+    <div class="meta">
+      Built on <a href="https://www.dsers.com">DSers</a> · Python · MCP · 🔒 Testing (private) · Coming soon
+    </div>
+  </header>
+
+  <article>
+    <h2>DSers 的位置 / Where DSers stands</h2>
+
+    <p><a href="https://www.dsers.com">DSers</a> 是 AliExpress 官方 dropshipping 合作伙伴，2021 年 Oberlo 关停后成为行业标准工具。50 万+ 创业者在用，管理着超过 1 亿件商品。</p>
+
+    <p><a href="https://www.dsers.com">DSers</a> is the official AliExpress dropshipping partner. After Oberlo shut down in 2021, it became the industry standard. 500k+ entrepreneurs, 100M+ products managed.</p>
+
+    <p>它解决了 dropshipping 里最繁重的几件事：<br>
+    It solved the heaviest parts of dropshipping:</p>
+
+    <table class="issue-table">
+      <tr><th>Pain point / 痛点</th><th>DSers solution / DSers 解决方案</th></tr>
+      <tr><td>Placing orders one by one on AliExpress<br>一单一单去速卖通下单</td><td>Bulk orders — hundreds in seconds<br>批量下单，几百单几秒钟</td></tr>
+      <tr><td>Manually syncing tracking numbers<br>手动同步物流单号</td><td>Auto-sync when supplier updates<br>自动同步，供应商更新了你的店铺就更新</td></tr>
+      <tr><td>Supplier goes out of stock<br>供应商断货要重新找</td><td>Supplier Optimizer — one-click swap<br>一键替换同款</td></tr>
+      <tr><td>Switching between multiple stores<br>多店铺管理来回切换</td><td>One dashboard for Shopify / Wix / WooCommerce<br>一个后台管理全部</td></tr>
+    </table>
+
+    <p>这些都做得很好。但有一块，DSers 目前还是要你手动来。<br>
+    All well done. But there's one piece DSers still leaves to you.</p>
+
+    <h2>没解决的那块 / The gap</h2>
+
+    <p>选品-编辑-推送。Product curation — import, edit, push.</p>
+
+    <p>DSers 自己的官方教程就叫 <a href="https://www.dsers.com/blog/dsers-for-new-dropshippers-find-import-edit-push-products-in-5-simple-steps/">"5 Simple Steps"</a>——找商品、导入、编辑、推送、管理。听起来简单，但每个"step"都是一堆点击：</p>
+
+    <p>DSers' own tutorial is called <a href="https://www.dsers.com/blog/dsers-for-new-dropshippers-find-import-edit-push-products-in-5-simple-steps/">"5 Simple Steps"</a> — find, import, edit, push, manage. Sounds simple. But each "step" is a pile of clicks:</p>
+
+    <div class="callout">
+      <p>Find a product → click import → wait → edit title (remove Chinese, remove supplier watermark text) → edit description → adjust price (multiply or apply rule) → remove unwanted variants → pick images (remove bad ones) → push to Shopify → choose visibility → wait for result</p>
+      <p>找到一个商品 → 点导入 → 等加载 → 改标题 → 改描述 → 调价格 → 删变体 → 选图片 → 推送到 Shopify → 选是否上架 → 等结果</p>
+    </div>
+
+    <p>一个商品走完这个流程要点十几次。一天上新 20 个商品？几百次点击。每天。<br>
+    A dozen clicks per product. 20 new products a day? Hundreds of clicks. Every day.</p>
+
+    <p>DSers 有 CSV 批量导入和批量推送功能，但那解决的是"量"的问题，不是"判断"的问题。你还是要自己决定每个商品的标题怎么改、价格定多少、哪些图片留哪些删。<br>
+    DSers has CSV bulk import and bulk push — but that solves the "volume" problem, not the "judgment" problem. You still decide how to rewrite each title, what price to set, which images to keep.</p>
+
+    <h2>AI agent 能做这件事 / AI agents can do this</h2>
+
+    <p>AI agent 擅长的恰恰是这类带判断的重复操作。你跟它说：<br>
+    AI agents are good at exactly this — repetitive tasks that require judgment. You say:</p>
+
+    <div class="callout">
+      <p>"Import this AliExpress product to my store, translate the title to English, 3x the price, keep only the first 5 images, don't publish to the online store, backend only."</p>
+      <p>"把这个速卖通商品导入到我的店铺，标题翻译成英文，价格乘 3，只保留前 5 张图，不要上架到在线商店，先放后台。"</p>
+    </div>
+
+    <p>它能理解每一个要求。问题是：它没有手。它不能登录 DSers，不能帮你点那十几个按钮。<br>
+    It understands every requirement. Problem: it has no hands. It can't log into DSers, can't click those buttons for you.</p>
+
+    <p>它能做的是调 API。但 DSers 的商品导入链路不是一个 API——是一连串 API，中间有状态依赖、有前置检查、有参数格式的坑。直接把原始 API 暴露给 AI，它会在参数嵌套层级、运费模板绑定这些细节上翻车。<br>
+    What it can do is call APIs. But DSers' import pipeline isn't one API — it's a chain of APIs with state dependencies, precondition checks, and parameter format traps. Expose the raw APIs to AI and it trips on nested parameter structures, shipping profile bindings, and undocumented prerequisites.</p>
+
+    <h2>我做了什么 / What I built</h2>
+
+    <p>我把 DSers 商品导入的完整流程封装成了 7 个高层 MCP（Model Context Protocol）工具。AI agent 不需要知道底下有多少个 API 调用，它只需要按工作流走：<br>
+    I wrapped DSers' entire product import flow into 7 high-level MCP (Model Context Protocol) tools. The AI agent doesn't need to know how many API calls are underneath — it just follows the workflow:</p>
+
+    <table class="issue-table">
+      <tr><th>Tool</th><th>What it does / 做什么</th><th>DSers equivalent / 对应 DSers 操作</th></tr>
+      <tr><td><code>prepare_import_candidate</code></td><td>Parse product from URL, apply rules, generate preview<br>给链接，自动解析商品、应用规则、生成预览</td><td>Find + Import + Edit<br>找商品 + 导入 + 编辑</td></tr>
+      <tr><td><code>get_import_preview</code></td><td>Preview before push: title, price, image changes<br>推送前预览：标题、价格、图片变了什么</td><td>Review edits<br>检查编辑结果</td></tr>
+      <tr><td><code>confirm_push_to_store</code></td><td>Push to Shopify with visibility/inventory/pricing config<br>一键推送到 Shopify，配置上架/库存/定价</td><td>Push + Publish settings<br>推送 + 发布设置</td></tr>
+      <tr><td><code>validate_rules</code></td><td>Validate pricing/content rules<br>校验定价/内容规则是否合法</td><td>DSers pricing rules<br>DSers 内置价格规则</td></tr>
+      <tr><td><code>get_rule_capabilities</code></td><td>Query supported rules and push options<br>查询支持哪些规则和推送选项</td><td>(new capability)<br>（新增能力）</td></tr>
+      <tr><td><code>set_product_visibility</code></td><td>Set product visibility<br>设置商品可见性</td><td>Publish / Unpublish<br>上架/下架</td></tr>
+      <tr><td><code>get_job_status</code></td><td>Check task status<br>查询任务状态</td><td>Wait for push result<br>等待推送结果</td></tr>
+    </table>
+
+    <p>以前在 DSers 网页上点十几次的流程，现在跟 AI 说一句话就完了。<br>
+    What used to take a dozen clicks in the DSers web UI now takes one sentence to AI.</p>
+
+    <p>目前支持速卖通（AliExpress）商品链接。规则在 <code>prepare</code> 阶段冻结快照，推送选项在 <code>confirm</code> 阶段单独传——内容编辑和发布行为解耦，AI 不会搞混。<br>
+    Currently supports AliExpress product links. Rules are frozen as a snapshot during <code>prepare</code>, push options are passed separately at <code>confirm</code> — content editing and publish behavior are decoupled so AI won't mix them up.</p>
+
+    <h2>一句话 = 一个场景 / One sentence = one scenario</h2>
+
+    <p>每个业务场景，对应一句标准话术。跟 AI 说一句话，整个流程自动走完：<br>
+    Each business scenario maps to one standard prompt. Say one sentence, the entire flow runs automatically:</p>
+
+    <table class="issue-table">
+      <tr><th>Scenario / 场景</th><th>What you say / 你说的话</th></tr>
+      <tr><td>Quick import<br>快速铺货</td><td>"Import this product to my store, 3x the price, don't publish yet."<br>"导入这个商品到我的店铺，价格乘 3，先不上架。"<br><code>https://aliexpress.com/item/100500xxx.html</code></td></tr>
+      <tr><td>Curated listing<br>精选上架</td><td>"Import this AliExpress product, keep only the first 5 images, translate title to English, description specs only, publish to online store."<br>"导入这个速卖通商品，只保留前 5 张图，标题翻译成英文，描述只留 specifications，直接上架到在线商店。"</td></tr>
+      <tr><td>High-margin pricing<br>高利润定价</td><td>"Import this product, 4x the price, use store pricing rule, auto-sync inventory."<br>"导入这个商品，价格乘 4，用店铺定价规则，自动同步库存。"</td></tr>
+      <tr><td>Test product<br>测品不上架</td><td>"Import this product to backend only, don't publish, I want to check the data first."<br>"导入这个商品到后台，不发布、不上架，我先看看数据。"</td></tr>
+      <tr><td>Bulk import<br>批量铺货</td><td>"Import all 5 AliExpress links, uniform 2.5x pricing, all to backend."<br>"把这 5 个速卖通链接全部导入，价格统一乘 2.5，全部先放后台。"</td></tr>
+      <tr><td>Swap supplier<br>替换供应商</td><td>"Switch this product to the new supplier link, keep price and title unchanged."<br>"这个商品换成这个新链接的供应商，价格和标题保持不变。"</td></tr>
+      <tr><td>Pre-push preview<br>推送前检查</td><td>"Preview what this product looks like after push — what changed in price and images?"<br>"预览一下这个商品推送后的效果，价格和图片变了什么？"</td></tr>
+      <tr><td>Change visibility<br>调整可见性</td><td>"Change this product from backend-only to published on the online store."<br>"把这个商品从后台改成上架到在线商店。"</td></tr>
+    </table>
+
+    <p>不需要记 API 参数，不需要学工具用法。你正常说话，AI 把它翻译成正确的工具调用。<br>
+    No API parameters to memorize, no tool usage to learn. You speak naturally, AI translates it into the right tool calls.</p>
+
+    <h2>人工智障时刻 / The "artificially incompetent" moment</h2>
+
+    <p>在做这个之前，我试过直接把 DSers 的原始 API 封装给 AI 用。结果 AI 推送商品到 Shopify 的时候一直报 "shipping profile not found"。<br>
+    Before building this, I tried wrapping DSers' raw APIs directly for AI. The AI kept getting "shipping profile not found" when pushing products to Shopify.</p>
+
+    <p>查了十几次。AI 每次都很认真地构造参数，每次都"看起来"是对的。但就是过不了。<br>
+    Tried a dozen times. AI carefully constructed parameters each time — everything "looked" right. But it never went through.</p>
+
+    <p>最后发现问题：推送接口需要带上 Shopify 的 delivery profile 绑定，但这个参数不在推送 API 的文档里——要先调另一个接口拿到 profile 列表，然后按特定格式拼进去。而且这个格式和 DSers 自己文档里写的还不一样。<br>
+    Turned out the push endpoint requires Shopify delivery profile bindings — but this parameter isn't in the push API docs. You have to call a separate endpoint first to get the profile list, then assemble it in a specific format. And that format doesn't match what DSers' own documentation says.</p>
+
+    <p>AI 不知道有这个前置步骤。它不笨，它只是被丢到了一个没铺好路的环境里。所以我做了这个 MCP：不是把 API 直接扔给 AI，而是把坑都填好，把路铺平，让 AI 只需要走完工作流就行。<br>
+    AI didn't know about this prerequisite. It's not stupid — it was just dropped into an environment with no paved road. So I built this MCP: instead of throwing raw APIs at AI, I filled every pothole and paved the path, so AI just needs to follow the workflow.</p>
+
+    <h2>状态 / Status</h2>
+
+    <p>这个项目目前还在测试中，仓库是 private 状态。我在跑通完整的导入-编辑-推送链路，确保各种边界情况都能正确处理。<br>
+    This project is currently in testing, repository is private. I'm running through the full import-edit-push pipeline, making sure edge cases are handled correctly.</p>
+
+    <p>很快就会公开发布。<br>
+    Public release coming soon.</p>
+
+  </article>
+
+  <footer>
+    <a href="../">← 我的人工智障 / My A.I.</a> · <a href="https://github.com/lofder">@lofder</a>
+  </footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的人工智障 ‐ My A.I. (Artificially Incompetent)</title>
+<link rel="stylesheet" href="style.css">
+<style>header { padding: 80px 0 40px; text-align: center; }</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>
+      <span class="zh">我的人工智障</span>
+      <span class="en">My A.I. (Artificially Incompetent)</span>
+    </h1>
+    <p class="tagline">
+      记录那些"智能"系统做出的不太智能的事情，以及我怎么修的。
+    </p>
+  </header>
+
+  <section class="topics">
+    <h2>Topics / 主题</h2>
+
+    <a class="topic-card" href="gateway-stability-patch/">
+      <h3>网关防崩补丁 / Gateway Stability Patch</h3>
+      <p>
+        OpenClaw 的网关不应该因为收到一个请求就挂掉。但它确实会。
+        握手超时写死 3 秒、loopback 正常关闭当致命错误、预连接零重试——
+        这些是真实的、未修复的问题。我做了一个补丁工具。
+      </p>
+      <p>
+        OpenClaw's gateway should not crash just because it received a request. But it does.
+        Hardcoded 3s handshake timeout, loopback normal closure treated as fatal, zero pre-connect retry —
+        these are real, unfixed issues. I built a patch tool.
+      </p>
+      <div class="tags">
+        <span class="tag">OpenClaw</span>
+        <span class="tag">WebSocket</span>
+        <span class="tag">Gateway</span>
+        <span class="tag">Python</span>
+        <span class="tag">MIT</span>
+      </div>
+    </a>
+
+    <a class="topic-card" href="dropship-import-mcp/">
+      <h3>AI 一句话铺货 / Dropship Import MCP</h3>
+      <p>
+        DSers 解决了 dropshipping 的大部分痛苦——批量下单、物流同步、供应商替换。
+        但选品-编辑-推送还是要一个一个手动来，每天几百次点击。
+        我把 DSers 的商品导入链路封装成 MCP 工具，AI 一句话搞定。
+      </p>
+      <p>
+        DSers solved most dropshipping pain — bulk orders, tracking sync, supplier swap.
+        But product curation (import → edit → push) is still manual, hundreds of clicks daily.
+        I wrapped DSers' import workflow into MCP tools. One sentence to AI, done.
+      </p>
+      <div class="tags">
+        <span class="tag">DSers</span>
+        <span class="tag">Dropshipping</span>
+        <span class="tag">MCP</span>
+        <span class="tag">Shopify</span>
+        <span class="tag">Python</span>
+        <span class="tag" style="background:#1a2332;color:#58a6ff;">🔒 Testing · Coming soon</span>
+      </div>
+    </a>
+
+    <a class="topic-card" href="durable-gateway-runtime/">
+      <h3>多渠道 AI Agent 架构设计</h3>
+      <p>
+        多渠道网关与执行模型架构设想。
+        渠道归一、意图识别、执行段契约、风险门、运维控制面分离、
+        可持久化上下文、组合协议、交付不变量——
+        一份面向多渠道 AI Agent 系统的完整架构设计文档。
+      </p>
+      <p>
+        Multi-channel gateway and execution model architecture concept.
+        Transport normalization, intent recognition, execution segment contracts, risk gate,
+        ops control plane separation, durable contexts, composition protocol, delivery invariants —
+        a complete architecture design for multi-channel AI agent systems.
+      </p>
+      <div class="tags">
+        <span class="tag">Architecture</span>
+        <span class="tag">Gateway</span>
+        <span class="tag">Execution Model</span>
+        <span class="tag">Bilingual</span>
+      </div>
+    </a>
+
+  </section>
+
+  <section class="about">
+    <h2>About / 关于</h2>
+    <p>
+      独立开发者。这个博客记录我在使用各种 AI 工具和基础设施时遇到的"智障时刻"——
+      那些明明不该出错的地方出了错，以及我是怎么绕过或修复它们的。
+    </p>
+    <p>
+      Solo developer. This blog documents the "artificially incompetent" moments I encounter with AI tools and infrastructure —
+      things that shouldn't break but do, and how I work around or fix them.
+    </p>
+    <p>
+      <a href="https://github.com/lofder">GitHub @lofder</a>
+    </p>
+  </section>
+
+  <footer>
+    <p>&copy; 2026 · <a href="https://github.com/lofder">lofder</a></p>
+  </footer>
+</div>
+
+</body>
+</html>

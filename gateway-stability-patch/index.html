@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gateway Stability Patch — 我的人工智障</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+  <nav>
+    <a href="../">← 我的人工智障 / My A.I.</a>
+  </nav>
+
+  <header>
+    <h1>网关防崩补丁 / Gateway Stability Patch</h1>
+    <div class="subtitle">网关不应该因为收到一个请求就挂掉。</div>
+    <div class="meta">
+      for <a href="https://openclawlab.com/">OpenClaw</a> · 
+      <a href="https://github.com/lofder/openclaw-gateway-stability-patch">GitHub</a> · 
+      MIT License · Python 3.9+
+    </div>
+  </header>
+
+  <article>
+    <h2>出了什么事</h2>
+    
+    <p>我在跑 <a href="https://openclawlab.com/">OpenClaw</a> 的 WebSocket 网关。进程活着，端口在听，<code>openclaw gateway health</code> 是绿的。</p>
+    
+    <p>但时不时，客户端一连上来，连接就挂了。不是进程挂。是连接挂了。静默的。客户端报"网关不可用"，运维跑 <code>openclaw gateway status</code> 一切正常。</p>
+
+    <h2>原则</h2>
+    
+    <p>网关在客户端和服务之间。对任何请求它有两种正确反应：</p>
+
+    <p><strong>处理它</strong> — 路由、处理、响应。</p>
+    <p><strong>拒绝它</strong> — 认证不对、协议不对、超过负荷——返回错误。</p>
+
+    <p>不管客户端发来什么——畸形数据、慢握手、时机不对——网关要么处理，要么干净地拒绝。它不应该让客户端侧的状况把自己搞挂。</p>
+
+    <p>OpenClaw 的网关违反了这个原则。</p>
+
+    <h2>查到了什么</h2>
+
+    <div class="compare-grid">
+      <div class="compare-card">
+        <h4>握手慢了一点？挂。</h4>
+        <p>握手超时写死 3 秒。机器忙一点，3 秒不够。连接默默掉了，没有错误消息，没有关闭码。客户端看到"不可用"。网关只是慢了一点——负载下完全正常。</p>
+        <div class="ref"><a href="https://github.com/openclaw/openclaw/issues/46892">#46892</a> <a href="https://github.com/openclaw/openclaw/issues/47931">#47931</a> <a href="https://github.com/openclaw/openclaw/issues/46097">#46097</a></div>
+      </div>
+      <div class="compare-card">
+        <h4>确认响应晚了一拍？挂。</h4>
+        <p>WebSocket 打开后的 connect-challenge 超时也是写死的，窗口不可配置。负载一高就超时，超时就断。不重试。</p>
+        <div class="ref"><a href="https://github.com/openclaw/openclaw/issues/45560">#45560</a> <a href="https://github.com/openclaw/openclaw/issues/45222">#45222</a></div>
+      </div>
+      <div class="compare-card">
+        <h4>本地连接正常关闭？挂。</h4>
+        <p>关闭码 1000 是 RFC 6455 定义的"正常关闭"。在 loopback 上是日常。但 OpenClaw 只处理 <code>"pairing required"</code> 做 fallback，其他全当致命错误。</p>
+        <div class="ref"><a href="https://github.com/openclaw/openclaw/issues/45504">#45504</a> <a href="https://github.com/openclaw/openclaw/issues/45560">#45560</a></div>
+      </div>
+      <div class="compare-card">
+        <h4>网络抖了一下？挂。</h4>
+        <p>预连接函数没有任何重试。一次 DNS 抖动、端口没就绪——和永久故障同等对待。用户手动重试立刻成功。每次。</p>
+        <div class="ref"><a href="https://github.com/openclaw/openclaw/issues/48032">#48032</a> <a href="https://github.com/openclaw/openclaw/issues/24777">#24777</a></div>
+      </div>
+    </div>
+
+    <h2>OpenClaw 官方没有修</h2>
+
+    <p>这些不是我独家发现的。都是社区用户在 <a href="https://github.com/openclaw/openclaw/issues">OpenClaw GitHub</a> 上提的真实 issue，至今未关闭：</p>
+
+    <table class="issue-table">
+      <tr><th>Issue</th><th>问题</th></tr>
+      <tr><td><a href="https://github.com/openclaw/openclaw/issues/46892">#46892</a></td><td>握手 3 秒超时太激进，busy event loop 下连接被 1000 关掉</td></tr>
+      <tr><td><a href="https://github.com/openclaw/openclaw/issues/47931">#47931</a></td><td><code>DEFAULT_HANDSHAKE_TIMEOUT_MS</code> 硬编码，建议改 10s 并可配置，官方未采纳</td></tr>
+      <tr><td><a href="https://github.com/openclaw/openclaw/issues/46097">#46097</a></td><td>Raspberry Pi 5 上 100% 失败率——ARM64 初始化 7-8 秒 vs 3 秒超时</td></tr>
+      <tr><td><a href="https://github.com/openclaw/openclaw/issues/45222">#45222</a></td><td>本地回环 WebSocket 间歇性失败，busy 网关上 60%+ 失败率</td></tr>
+      <tr><td><a href="https://github.com/openclaw/openclaw/issues/48032">#48032</a></td><td>node-host 断开后不重试直接退出，单次暂时故障杀死服务</td></tr>
+      <tr><td><a href="https://github.com/openclaw/openclaw/issues/24777">#24777</a></td><td>重试无退避，每秒一次紧循环 600+ 次</td></tr>
+    </table>
+
+    <div class="callout warn">
+      代码里其实有一个环境变量 <code>OPENCLAW_TEST_HANDSHAKE_TIMEOUT_MS</code>——但它被 <code>process.env.VITEST</code> 门控了，生产环境用不了。修复的机制就在代码里，但被锁在了测试标志后面。
+    </div>
+
+    <h2>我的修复</h2>
+
+    <p>既然官方没修，我做了一个 overlay 工具来补丁网关。让它按应有的方式工作：处理请求或拒绝请求，但不要自己挂掉。</p>
+
+    <table class="before-after">
+      <tr><th>之前：崩</th><th>之后：处理或拒绝</th></tr>
+      <tr><td>握手 > 3s → 默默死掉</td><td>等到 8s（可配置），然后干净超时 ✅</td></tr>
+      <tr><td>Challenge 慢 → 连接被杀</td><td>等到 6s（可配置），然后返回错误 ✅</td></tr>
+      <tr><td>Loopback 1000/1006 → 致命崩溃</td><td>识别为正常 → 走 local fallback ✅</td></tr>
+      <tr><td>网络抖 → 永久失败</td><td>指数退避重试，3 次后干净失败 ✅</td></tr>
+      <tr><td>VITEST 门控的环境变量</td><td>生产环境解锁 ✅</td></tr>
+      <tr><td>手改文件，<code>openclaw update</code> 后丢失</td><td>可重复的 apply/check/rollback ✅</td></tr>
+    </table>
+
+    <h2>用起来</h2>
+
+    <pre><code>pip install .
+
+gateway-stability apply \
+  --install-root /usr/local/lib/node_modules/openclaw \
+  --overlay-root ~/.gateway-stability/overlays/gateway-stability \
+  --env-file ~/.gateway-stability/.env</code></pre>
+
+    <p>幂等。跑两次和跑一次一样。每次 <code>openclaw update</code> 后重新跑一次就行。</p>
+
+    <h3>环境变量</h3>
+
+    <pre><code>GW_STABILITY_HANDSHAKE_TIMEOUT_MS=8000
+GW_STABILITY_CONNECT_CHALLENGE_TIMEOUT_MS=6000
+GW_STABILITY_PRECONNECT_RETRY_ATTEMPTS=3
+GW_STABILITY_PRECONNECT_RETRY_MIN_DELAY_MS=250
+GW_STABILITY_PRECONNECT_RETRY_MAX_DELAY_MS=1500
+GW_STABILITY_PRECONNECT_RETRY_BACKOFF=2</code></pre>
+
+    <h2>项目信息</h2>
+
+    <p>
+      <a href="https://github.com/lofder/openclaw-gateway-stability-patch">GitHub 仓库</a> · 
+      <a href="https://github.com/lofder/openclaw-gateway-stability-patch/wiki">Wiki 文档</a> · 
+      <a href="https://github.com/lofder/openclaw-gateway-stability-patch/releases/tag/v0.1.0">Release v0.1.0</a>
+    </p>
+    <p class="secondary">Python 3.9+ · 零外部依赖 · MIT License · 中英文双语文档</p>
+
+  </article>
+
+  <footer>
+    <a href="../">← 我的人工智障 / My A.I.</a> · <a href="https://github.com/lofder">@lofder</a>
+  </footer>
+</div>
+
+</body>
+</html>

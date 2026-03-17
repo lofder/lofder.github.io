@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>多渠道 AI Agent 架构设计 — 我的人工智障</title>
+<link rel="stylesheet" href="../style.css">
+<style>
+.arch-note {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px 24px;
+  margin: 16px 0 24px;
+  font-size: 0.92em;
+  color: var(--text-secondary);
+}
+.term-table td:first-child { font-family: "SF Mono", "Fira Code", monospace; font-size: 0.88em; white-space: nowrap; }
+.phase-title { color: var(--accent); font-size: 1.1em; margin: 24px 0 12px; font-weight: 600; }
+.mermaid-placeholder {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px;
+  margin: 20px 0 32px;
+  font-family: "SF Mono", "Fira Code", monospace;
+  font-size: 0.82em;
+  line-height: 1.7;
+  overflow-x: auto;
+  white-space: pre;
+  color: var(--text-secondary);
+}
+article h4 {
+  font-size: 1em;
+  margin: 24px 0 8px;
+  color: var(--text);
+}
+article h4 code {
+  color: var(--accent);
+  font-size: 0.95em;
+}
+.does-table { width: 100%; border-collapse: collapse; margin: 12px 0 24px; font-size: 0.88em; }
+.does-table td { padding: 8px 14px; border: 1px solid var(--border); vertical-align: top; }
+.does-table td:first-child { width: 50%; }
+</style>
+</head>
+<body>
+<div class="container">
+  <nav><a href="../">← 我的人工智障 / My A.I.</a></nav>
+
+  <header>
+    <h1>多渠道 AI Agent 架构设计</h1>
+    <div class="subtitle">Multi-Channel Gateway and Execution Model · 多渠道网关与执行模型架构设想</div>
+    <div class="meta">
+      Architecture Concept · 面向开源讨论 · Next.js · TypeScript · Lark SDK
+    </div>
+  </header>
+
+  <article>
+
+    <div class="arch-note">
+      <strong>Public architecture concept for open-source discussion.</strong><br>
+      <strong>面向开源讨论的公开架构设想文档。</strong><br><br>
+      This document uses generic terminology and omits sensitive business details. It describes a direction, not a final production commitment.<br>
+      本文使用通用术语，隐去敏感业务细节。内容是一种架构方向，而非最终生产承诺。
+    </div>
+
+    <!-- ========== 1. Positioning ========== -->
+    <h2>1. Positioning / 定位</h2>
+
+    <p>This concept targets systems that receive requests from one or more chat-like or event-driven channels, interpret user intent through a single logical frontdoor, and execute work through a small set of stable contracts.</p>
+    <p>该设想面向这样一类系统：请求来自一个或多个聊天式或事件驱动式入口，由唯一的逻辑前门统一理解需求，再通过少量稳定执行契约来完成执行。</p>
+
+    <p>The main design goal is to keep channel-specific behavior out of business logic, while preventing the frontdoor from becoming an unbounded "do everything" layer.</p>
+    <p>核心目标是把渠道细节隔离在业务逻辑之外，同时避免业务前门膨胀成无边界的"万事通"层。</p>
+
+    <!-- ========== 2. Terminology ========== -->
+    <h2>2. Terminology / 术语表</h2>
+
+    <table class="issue-table term-table">
+      <tr><th>Term / 术语</th><th>中文说明</th><th>English Description</th></tr>
+      <tr><td>Transport Ingress</td><td>传输归一层</td><td>Normalizes channel and webhook events into a stable inbound contract.</td></tr>
+      <tr><td>Business Orchestrator</td><td>业务编排前门</td><td>The single logical frontdoor that interprets requests and produces execution plans.</td></tr>
+      <tr><td>Triage Stage</td><td>前置判断阶段</td><td>Internal decision stage that classifies requests before execution begins.</td></tr>
+      <tr><td>Execution Segment</td><td>执行段</td><td>A stable execution contract responsible for a specific class of work.</td></tr>
+      <tr><td>Risk Gate</td><td>风险门</td><td>Pre-execution layer that evaluates safety, approval, and policy compliance.</td></tr>
+      <tr><td>Operations Control</td><td>运维控制面</td><td>The control-plane function for release, rollback, and platform management.</td></tr>
+      <tr><td>DeliveryContext</td><td>单次交付上下文</td><td>Short-lived context scoped to one request-response interaction.</td></tr>
+      <tr><td>CaseContext</td><td>长流程上下文</td><td>Persistent context for workflows spanning multiple turns or waiting points.</td></tr>
+      <tr><td>ExecutionPlan</td><td>执行计划</td><td>Durable plan that encodes segments, composition mode, and final-write ownership.</td></tr>
+    </table>
+
+    <!-- ========== 3. Core Objectives ========== -->
+    <h2>3. Core Objectives / 核心目标</h2>
+
+    <ul>
+      <li><strong>Isolate transport from business logic.</strong><br>把传输适配从业务决策中隔离出去。</li>
+      <li><strong>One frontdoor, one visible reply surface, one final writer per request.</strong><br>每个请求只有一个业务前门、一个可见回复面、一个 final writer。</li>
+      <li><strong>Compress unbounded business scenarios into a small set of stable execution contracts.</strong><br>用少量稳定执行契约承接不断增长的业务场景。</li>
+      <li><strong>Make long-running work recoverable, inspectable, and auditable.</strong><br>让长流程具备可恢复、可检查、可审计能力。</li>
+      <li><strong>Keep business execution separated from operations and control-plane actions.</strong><br>将业务面执行与运维控制面动作彻底分离。</li>
+    </ul>
+
+    <!-- ========== 4. Layered Model ========== -->
+    <h2>4. Layered Model / 分层模型</h2>
+
+<div class="mermaid-placeholder">Channel (Chat / Event)
+    │ raw event
+    ▼
+Transport Ingress (传输归一层)
+    │ normalized envelope
+    ▼
+Business Orchestrator (业务编排前门)
+    │ intent ←→ Intent Recognition (意图识别)
+    │ execution plan
+    ▼
+Execution Segments (执行段)
+    │ preflight check
+    ▼
+Risk Gate (风险门)
+    │ pass / confirm / block
+    ▼
+Runtime (执行引擎)
+    │
+    ▼
+Backend (Pipelines / Queues / Jobs / Tool Adapters)
+
+═══════════════════════════════════════
+Operations Control (运维控制面) ····→ 各层（控制面独立通道）</div>
+
+    <!-- ========== 5. Boundary Definitions ========== -->
+    <h2>5. Boundary Definitions / 边界定义</h2>
+
+    <h3>5.1 Transport Ingress — 传输归一层</h3>
+
+    <p>The gateway layer that normalizes channel events into a stable inbound contract. It has no role in business logic.<br>
+    将渠道事件归一为稳定入站契约的网关层，与业务逻辑完全无关。</p>
+
+    <p><strong>Does / 负责</strong></p>
+    <table class="does-table">
+      <tr><td>Webhook and socket intake</td><td>Webhook 与 socket 接入</td></tr>
+      <tr><td>Signature and challenge handling</td><td>签名与 challenge 处理</td></tr>
+      <tr><td>Fast transport-level ACK</td><td>传输层快速 ACK</td></tr>
+      <tr><td>Event deduplication</td><td>事件去重</td></tr>
+      <tr><td>Session and reply-anchor normalization</td><td>会话与回复锚点归一</td></tr>
+      <tr><td>Channel capability detection</td><td>渠道能力识别</td></tr>
+      <tr><td>Transport feedback: typing, busy, retry, fallback</td><td>传输反馈：typing、busy、重试、降级</td></tr>
+    </table>
+
+    <p><strong>Does not / 不负责</strong></p>
+    <table class="does-table">
+      <tr><td>Business intent interpretation</td><td>业务意图解释</td></tr>
+      <tr><td>Execution segment selection</td><td>执行段选择</td></tr>
+      <tr><td>Control-plane decisions</td><td>控制面决策</td></tr>
+      <tr><td>User-visible business reasoning</td><td>面向用户的业务理解</td></tr>
+    </table>
+
+    <div class="arch-note">
+      <strong>Engineering note / 工程说明</strong><br>
+      This layer is inherently stateful. Dedup windows, session mappings, reply anchors, and retry records must live in external state storage — not in process memory alone.<br>
+      该层本质上是有状态的。去重窗口、会话映射、回复锚点、重试记录必须存入外部状态存储，不能只依赖进程内存。
+    </div>
+
+    <h3>5.2 Business Orchestrator — 业务编排前门</h3>
+
+    <p>The single logical frontdoor. Exactly one orchestrator, one visible reply surface, one final writer per request.<br>
+    唯一的逻辑业务前门。每个请求只有一个编排前门、一个可见回复面、一个 final writer。</p>
+
+    <p><strong>Does / 负责</strong></p>
+    <table class="does-table">
+      <tr><td>Recognize intent</td><td>识别意图</td></tr>
+      <tr><td>Classify whether a request belongs to the business or operations plane</td><td>判断请求属于业务面还是控制面</td></tr>
+      <tr><td>Map to execution segments and produce a durable <code>ExecutionPlan</code></td><td>映射到执行段并产出可持久化的 <code>ExecutionPlan</code></td></tr>
+      <tr><td>Preserve one visible delivery surface</td><td>维护唯一可见交付面</td></tr>
+      <tr><td>Decide final-write ownership</td><td>确定 final writer 归属</td></tr>
+    </table>
+
+    <div class="arch-note">
+      <strong>Design note / 设计说明</strong><br>
+      Intent classification logic should evolve as a rule executor and plan generator — not as an ever-growing pile of ad hoc conditions.<br>
+      意图识别逻辑应演进为"规则执行器 + 计划生成器"，而不是不断膨胀的临时条件堆。
+    </div>
+
+    <h3>5.3 Execution Segments — 执行段</h3>
+
+    <p>Stable execution contracts that own predictable, inspectable work. Segment contracts remain stable even as business scenarios change.<br>
+    持有可预测、可检查执行语义的稳定契约。即使业务场景不断变化，执行段契约也保持稳定。</p>
+
+    <table class="does-table">
+      <tr><td>Execute according to the <code>ExecutionPlan</code></td><td>按照 <code>ExecutionPlan</code> 执行任务</td></tr>
+      <tr><td>Expose consistent state transitions and waiting points</td><td>暴露一致的状态转换与等待点</td></tr>
+      <tr><td>Report structured results and failures to the orchestrator</td><td>向编排层上报结构化结果与失败</td></tr>
+    </table>
+
+    <h3>5.4 Risk Gate — 风险门</h3>
+
+    <p>A pre-execution decision layer that sits between execution segments and the runtime. All side-effecting actions must pass through it.<br>
+    位于执行段与 runtime 之间的预执行决策层。所有有副作用的动作都必须通过。</p>
+
+    <p><strong>Evaluation dimensions / 评估维度</strong></p>
+    <table class="issue-table">
+      <tr><th>Dimension</th><th>维度</th></tr>
+      <tr><td>Operation type: read / write / delete</td><td>操作类型：读 / 写 / 删除</td></tr>
+      <tr><td>Target-system criticality</td><td>目标系统关键度</td></tr>
+      <tr><td>Data sensitivity</td><td>数据敏感级别</td></tr>
+      <tr><td>Blast radius</td><td>影响范围</td></tr>
+      <tr><td>Reversibility</td><td>可逆性</td></tr>
+    </table>
+
+    <p><strong>Decisions / 决策</strong></p>
+    <table class="issue-table">
+      <tr><th>Decision</th><th>说明</th></tr>
+      <tr><td><code>pass</code> — allow immediately</td><td>低风险，直接放行</td></tr>
+      <tr><td><code>confirm</code> — require explicit approval</td><td>中风险，需要显式审批</td></tr>
+      <tr><td><code>block</code> — reject and notify operations</td><td>高风险，拒绝执行并通知控制面</td></tr>
+    </table>
+
+    <h3>5.5 Operations Control — 运维控制面</h3>
+
+    <p>The control-plane function that manages the entire system. It is separate from the business plane and should never be reached via normal business requests.<br>
+    管理整套系统的控制面职能，与业务面彻底分离，不通过普通业务请求触达。</p>
+
+    <table class="does-table">
+      <tr><td>Release, rollback, restart</td><td>发布、回滚、重启</td></tr>
+      <tr><td>Runtime and worker recovery</td><td>Runtime 与 worker 恢复</td></tr>
+      <tr><td>Control-plane configuration changes</td><td>控制面配置变更</td></tr>
+      <tr><td>Policy override and recovery drills</td><td>风险策略 override 与恢复演练</td></tr>
+      <tr><td>Platform-level investigation</td><td>平台级排障</td></tr>
+    </table>
+
+    <!-- ========== 6. Execution Model ========== -->
+    <h2>6. Execution Model / 执行模型</h2>
+
+    <h3>6.1 Intent Segments — 意图识别段</h3>
+
+    <p>These describe the shape of demand, not execution contracts.<br>
+    这些段负责表达需求形态，而非执行契约。</p>
+
+    <table class="issue-table">
+      <tr><th>Category</th><th>类别</th></tr>
+      <tr><td>Content creation and publishing</td><td>内容创作与发布</td></tr>
+      <tr><td>File and knowledge processing</td><td>文件与知识处理</td></tr>
+      <tr><td>Data synchronization</td><td>数据同步</td></tr>
+      <tr><td>Case-based approval workflows</td><td>Case 审批流程</td></tr>
+      <tr><td>Web automation</td><td>网页自动化</td></tr>
+      <tr><td>Order and transaction flows</td><td>订单与交易流程</td></tr>
+      <tr><td>Research and monitoring</td><td>研究与监测</td></tr>
+      <tr><td>Analytics and reporting</td><td>分析与报表</td></tr>
+      <tr><td>Real-time decision support</td><td>实时决策支持</td></tr>
+    </table>
+
+    <h3>6.2 Execution Segments — 执行段</h3>
+
+    <p>Six recommended stable execution contracts:<br>
+    建议保留的六类稳定执行契约：</p>
+
+    <h4><code>Watcher Segment</code> — 观察段</h4>
+    <p>Continuous observation, scheduled checks, anomaly monitoring, and follow-up verification.<br>
+    持续观察、定时检查、异常监测与后续回查。</p>
+
+    <h4><code>Artifact Workflow Segment</code> — 产物工作流段</h4>
+    <p>Drafting, review, export, packaging, and publish flows centered on artifacts.<br>
+    以产物为中心的草稿、审核、导出、打包与发布流程。</p>
+
+    <h4><code>Case Flow Segment</code> — Case 流程段</h4>
+    <p>Long-running flows with waiting points, approval steps, reminders, or pause/resume behavior.<br>
+    包含等待点、审批步骤、提醒点或暂停恢复能力的长流程。</p>
+
+    <h4><code>System Action Segment</code> — 系统写操作段</h4>
+    <p>Side-effecting writes into external systems. Requires idempotency, preflight checks, and rollback awareness.<br>
+    面向外部系统的有副作用写操作。需要幂等性、预检与回滚感知。</p>
+
+    <h4><code>Knowledge Maintenance Segment</code> — 知识维护段</h4>
+    <p>Quiet refresh, cleanup, deduplication, and distillation. Must support inspect, pause, validate, and rollback.<br>
+    静默刷新、清理、去重与蒸馏。必须支持检查、暂停、验证与回滚。</p>
+
+    <h4><code>Ops Escalation Segment</code> — 运维升级段</h4>
+    <p>Explicit handoff to the operations and control plane.<br>
+    显式升级到运维控制面。</p>
+
+    <h3>6.3 Triage Stage — 前置判断阶段</h3>
+
+    <p>The <code>Triage Stage</code> lives inside the <code>Business Orchestrator</code>. It is not an execution segment and owns no runtime.<br>
+    <code>Triage Stage</code> 位于 <code>Business Orchestrator</code> 内部，不是执行段，也不持有独立 runtime。</p>
+
+    <table class="issue-table">
+      <tr><th>Outcome</th><th>结果</th></tr>
+      <tr><td>Direct handling — resolve immediately</td><td>直接处理，当场完成</td></tr>
+      <tr><td>Single segment — enter one execution contract</td><td>单段执行，进入一条执行契约</td></tr>
+      <tr><td>Composed plan — enter a multi-segment plan</td><td>组合计划，进入多段执行计划</td></tr>
+      <tr><td>Ops escalation — hand off to control plane</td><td>升级控制面</td></tr>
+    </table>
+
+    <!-- ========== 7. Composition Protocol ========== -->
+    <h2>7. Composition Protocol / 组合协议</h2>
+
+    <p>When one intent maps to more than one execution segment, an explicit composition protocol must be used.<br>
+    当一个意图需要映射到多个执行段时，必须使用显式的组合协议。</p>
+
+    <h3>7.1 Composition Modes / 组合模式</h3>
+
+    <table class="issue-table">
+      <tr><th>Mode</th><th>Description</th><th>说明</th></tr>
+      <tr><td><code>sequential</code></td><td>Output of one segment becomes input to the next.</td><td>前一段的输出成为后一段的输入。</td></tr>
+      <tr><td><code>parallel-then-join</code></td><td>Multiple segments run in parallel and join before final delivery.</td><td>多段并行执行，汇总后统一交付。</td></tr>
+      <tr><td><code>follow-up</code></td><td>A secondary segment starts only after the primary finishes and the orchestrator decides.</td><td>主段完成且编排层再次判断后，次段才启动。</td></tr>
+    </table>
+
+    <h3>7.2 Ownership Rules / 所有权规则</h3>
+
+    <ul>
+      <li>Exactly one <strong>primary segment</strong> may write to the <code>DeliveryContext</code>.<br>
+      只有一个 <strong>primary segment</strong> 可以写 <code>DeliveryContext</code>。</li>
+      <li>All <strong>secondary segments</strong> may produce intermediate data or artifacts, but must never become the visible final writer.<br>
+      所有 <strong>secondary segment</strong> 只能产出中间数据或产物，不能成为可见 final writer。</li>
+      <li>The orchestrator must declare <code>final_writer_step</code> before execution begins.<br>
+      编排层必须在执行开始前声明 <code>final_writer_step</code>。</li>
+    </ul>
+
+    <h3>7.3 Execution Plan Requirement / 执行计划要求</h3>
+
+    <p>All multi-segment executions must be backed by a durable <code>ExecutionPlan</code> using either a clear state machine or a deterministic pipeline definition. Loose event choreography alone is insufficient for checkpointing, replay, audit, and recovery.</p>
+    <p>所有多段执行都必须有可持久化的 <code>ExecutionPlan</code> 支撑，底层基于明确状态机或确定性 pipeline。单靠松散事件编排不足以支撑 checkpoint、重放、审计与恢复。</p>
+
+    <!-- ========== 8. Delivery Invariants ========== -->
+    <h2>8. Delivery Invariants / 交付不变量</h2>
+
+    <p>These invariants must hold regardless of how many channels or long-running workflows the system supports:<br>
+    无论系统支持多少渠道或长流程，以下不变量必须始终成立：</p>
+
+    <table class="issue-table">
+      <tr><th>Invariant</th><th>不变量</th></tr>
+      <tr><td>One request → one <code>DeliveryContext</code></td><td>一个请求只有一个 <code>DeliveryContext</code></td></tr>
+      <tr><td>One request → one visible reply surface</td><td>一个请求只有一个可见回复面</td></tr>
+      <tr><td>One request → one final writer</td><td>一个请求只有一个 final writer</td></tr>
+      <tr><td>Transport feedback ≠ semantic state</td><td>传输反馈不等于业务语义状态</td></tr>
+      <tr><td>Missing channel capability → graceful degradation, never silent drop</td><td>渠道能力不足时必须优雅降级，不能静默丢弃</td></tr>
+    </table>
+
+    <!-- ========== 9. Context Model ========== -->
+    <h2>9. Context Model / 上下文模型</h2>
+
+    <h3>9.1 <code>DeliveryContext</code> — 单次交付上下文</h3>
+
+    <p>Used for short-lived, single request-response interactions. Created at request start, closed on completion or failure.<br>
+    用于短生命周期的单次请求交付，随请求创建、随完成或失败关闭。</p>
+
+    <table class="issue-table">
+      <tr><th>Field</th><th>字段</th></tr>
+      <tr><td><code>context_id</code></td><td>唯一标识</td></tr>
+      <tr><td><code>reply_target</code></td><td>回复锚点</td></tr>
+      <tr><td><code>semantic_state</code></td><td>语义状态</td></tr>
+      <tr><td><code>channel_capabilities</code></td><td>渠道能力快照</td></tr>
+      <tr><td><code>primary_segment</code></td><td>当前持有写权的执行段</td></tr>
+      <tr><td><code>created_at</code></td><td>创建时间</td></tr>
+      <tr><td><code>closed_at</code></td><td>关闭时间</td></tr>
+    </table>
+
+    <h3>9.2 <code>CaseContext</code> — 长流程上下文</h3>
+
+    <p>Used for flows that span waiting points, multiple user turns, or background progression.<br>
+    用于跨等待点、多轮交互或后台持续推进的长流程。</p>
+
+    <table class="issue-table">
+      <tr><th>Field</th><th>字段</th></tr>
+      <tr><td><code>case_id</code></td><td>唯一流程标识</td></tr>
+      <tr><td><code>case_state</code></td><td>当前流程状态</td></tr>
+      <tr><td><code>waiting_point</code></td><td>当前等待点</td></tr>
+      <tr><td><code>history_summary</code></td><td>历史操作摘要</td></tr>
+      <tr><td><code>last_active_at</code></td><td>最近活跃时间</td></tr>
+    </table>
+
+    <h3>9.3 Serialization Rule / 可序列化规则</h3>
+
+    <p>All durable contexts and plans must be serializable and hydratable after restart. Never store live process handles, active sockets, or transient runtime objects inside them.</p>
+    <p>所有可持久化的上下文与计划必须支持序列化与重启后 hydrate。不允许将活跃进程句柄、socket 或瞬时 runtime 对象存入其中。</p>
+
+    <!-- ========== 10. Execution Primitives ========== -->
+    <h2>10. Execution Primitives / 执行原语</h2>
+
+    <h3><code>direct</code> — 直接执行</h3>
+
+    <p>Use only when <strong>all</strong> of the following conditions are true. Otherwise use an execution segment.<br>
+    仅当以下<strong>所有</strong>条件都满足时才使用，否则必须进入执行段。</p>
+
+    <table class="issue-table">
+      <tr><th>Condition</th><th>条件</th></tr>
+      <tr><td>Low risk</td><td>低风险</td></tr>
+      <tr><td>No external write</td><td>无外部写操作</td></tr>
+      <tr><td>No waiting point</td><td>无等待点</td></tr>
+      <tr><td>No durable artifact</td><td>无需持久化产物</td></tr>
+      <tr><td>No approval needed</td><td>不需要审批</td></tr>
+      <tr><td>Short execution window</td><td>执行窗口很短</td></tr>
+    </table>
+
+    <h3><code>pipeline</code> — 流水线</h3>
+
+    <p>For tightly coupled multi-step work that requires inspection, replay, and rollback.<br>
+    适用于步骤强耦合、需要 inspect、重放与回滚能力的多步骤任务。</p>
+
+    <h3><code>queue or job</code> — 队列或定时任务</h3>
+
+    <p>For background work, scheduled checks, pause/resume flows, or long-running cases.<br>
+    适用于后台任务、定时检查、暂停恢复流程或长时间运行 case。</p>
+
+    <!-- ========== 11. Risk Gate ========== -->
+    <h2>11. Risk Gate / 风险门</h2>
+
+    <h3>Evaluation Dimensions / 评估维度</h3>
+
+    <table class="issue-table">
+      <tr><th>Dimension</th><th>维度</th><th>Values</th></tr>
+      <tr><td>Operation type</td><td>操作类型</td><td><code>read</code> / <code>write</code> / <code>delete</code></td></tr>
+      <tr><td>Target-system criticality</td><td>目标系统关键度</td><td><code>low</code> / <code>medium</code> / <code>high</code> / <code>critical</code></td></tr>
+      <tr><td>Data sensitivity</td><td>数据敏感级别</td><td><code>none</code> / <code>internal</code> / <code>confidential</code> / <code>restricted</code></td></tr>
+      <tr><td>Blast radius</td><td>影响范围</td><td><code>single</code> / <code>batch</code> / <code>system-wide</code></td></tr>
+      <tr><td>Reversibility</td><td>可逆性</td><td><code>reversible</code> / <code>partial</code> / <code>irreversible</code></td></tr>
+    </table>
+
+    <h3>Decision Outcomes / 决策结果</h3>
+
+    <table class="issue-table">
+      <tr><th>Decision</th><th>When</th><th>适用情况</th></tr>
+      <tr><td><code>pass</code></td><td>Low-risk, reversible reads or writes</td><td>低风险、可逆的读写操作</td></tr>
+      <tr><td><code>confirm</code></td><td>Medium risk, or requires explicit authorization</td><td>中风险或需要显式授权</td></tr>
+      <tr><td><code>block</code></td><td>Critical or irreversible system-wide actions</td><td>关键系统的不可逆操作</td></tr>
+    </table>
+
+    <p>Approval for <code>confirm</code> decisions may come from policy rules or human-in-the-loop review.<br>
+    <code>confirm</code> 决策的审批既可来自策略规则，也可来自人工参与审批。</p>
+
+    <!-- ========== 12. Error Handling ========== -->
+    <h2>12. Error Handling and Recovery / 错误处理与恢复</h2>
+
+    <h3>Error Flow / 错误流转</h3>
+
+    <table class="issue-table">
+      <tr><th>Step</th><th>步骤</th></tr>
+      <tr><td>1. Backend or runtime performs bounded retries (exponential backoff)</td><td>Backend 或 runtime 执行有限重试（指数退避）</td></tr>
+      <tr><td>2. Execution segment converts failures into structured errors</td><td>执行段将失败转换为结构化错误</td></tr>
+      <tr><td>3. Orchestrator decides: retry, surface failure to user, or escalate</td><td>编排层决定：重试、展示失败给用户或升级</td></tr>
+      <tr><td>4. Transport ingress handles delivery retries independently</td><td>传输归一层独立处理交付重试</td></tr>
+    </table>
+
+    <h3>Recovery Principles / 恢复原则</h3>
+
+    <table class="issue-table">
+      <tr><th>Principle</th><th>原则</th></tr>
+      <tr><td>Recover from the nearest checkpoint, not from scratch</td><td>从最近的 checkpoint 恢复，而非整单重跑</td></tr>
+      <tr><td>Prefer idempotency keys for all side-effecting actions</td><td>对所有有副作用动作优先使用幂等键</td></tr>
+      <tr><td>Apply circuit breaking after repeated segment failures</td><td>对连续执行段失败使用熔断</td></tr>
+      <tr><td>Escalate critical failures to the operations plane immediately</td><td>将严重故障立即升级到控制面</td></tr>
+    </table>
+
+    <!-- ========== 13. Observability ========== -->
+    <h2>13. Observability / 可观测性</h2>
+
+    <p>A <code>trace_id</code> generated at the gateway layer must propagate end to end through every layer.<br>
+    由网关层生成的 <code>trace_id</code> 必须端到端贯穿每一层。</p>
+
+    <table class="issue-table">
+      <tr><th>Layer</th><th>Signal</th><th>层级</th><th>指标</th></tr>
+      <tr><td>Gateway</td><td>ACK latency, dedup rate, delivery failure rate</td><td>网关</td><td>ACK 延迟、去重率、交付失败率</td></tr>
+      <tr><td>Orchestrator</td><td>Triage latency, segment distribution</td><td>编排层</td><td>Triage 延迟、执行段分布</td></tr>
+      <tr><td>Execution Segments</td><td>Duration p99, error rate, retry count</td><td>执行段</td><td>耗时 p99、错误率、重试次数</td></tr>
+      <tr><td>Risk Gate</td><td>Pass / confirm / block distribution, gate latency</td><td>风险门</td><td>pass/confirm/block 分布、决策延迟</td></tr>
+      <tr><td>Runtime / Backend</td><td>Execution duration, external API error rate</td><td>执行后端</td><td>执行耗时、外部 API 错误率</td></tr>
+    </table>
+
+    <!-- ========== 14. Adoption Path ========== -->
+    <h2>14. Adoption Path / 演进路径</h2>
+
+    <p class="phase-title">Phase 1 — Stabilize the Execution Skeleton / 稳定执行骨架</p>
+
+    <table class="issue-table">
+      <tr><th>Task</th><th>任务</th></tr>
+      <tr><td>Define execution segment contracts</td><td>定义执行段契约</td></tr>
+      <tr><td>Make final-writer ownership explicit</td><td>明确 final writer 归属</td></tr>
+      <tr><td>Make all contexts serializable</td><td>让所有上下文可序列化</td></tr>
+      <tr><td>Validate recovery and circuit-breaking behavior</td><td>验证恢复与熔断行为</td></tr>
+    </table>
+
+    <p class="phase-title">Phase 2 — Introduce the Gateway Layer / 引入网关层</p>
+
+    <table class="issue-table">
+      <tr><th>Task</th><th>任务</th></tr>
+      <tr><td>Add normalized inbound envelopes</td><td>引入归一化入站信封</td></tr>
+      <tr><td>Isolate transport quirks from the orchestrator</td><td>将渠道 quirks 隔离在编排层之外</td></tr>
+      <tr><td>Validate that business decisions remain stable</td><td>验证业务判断结果不因 transport 变化而漂移</td></tr>
+    </table>
+
+    <p class="phase-title">Phase 3 — Add More Transport Channels / 接入更多渠道</p>
+
+    <table class="issue-table">
+      <tr><th>Task</th><th>任务</th></tr>
+      <tr><td>Add new channel adapters</td><td>增加新的渠道适配器</td></tr>
+      <tr><td>Keep the orchestrator and segment model unchanged</td><td>保持编排层与执行段模型不变</td></tr>
+      <tr><td>Verify graceful degradation and delivery parity</td><td>验证优雅降级与交付一致性</td></tr>
+    </table>
+
+    <!-- ========== 15. Open-Source Note ========== -->
+    <h2>15. Open-Source Note / 开源说明</h2>
+
+    <p>This document is intentionally generalized for public sharing:<br>
+    本文档有意为公开发布做了泛化处理：</p>
+
+    <table class="issue-table">
+      <tr><th>Treatment</th><th>处理方式</th></tr>
+      <tr><td>Internal product names replaced with generic terms</td><td>内部产品称呼替换为通用术语</td></tr>
+      <tr><td>Channel-specific examples generalized</td><td>渠道示例被泛化处理</td></tr>
+      <tr><td>Sensitive operational details omitted</td><td>敏感运维细节被省略</td></tr>
+      <tr><td>Evolving areas described as direction, not commitment</td><td>仍在演进的部分以"方向"而非"承诺"表达</td></tr>
+    </table>
+
+    <p>The patterns described here are reusable for any multi-channel, long-running AI agent or workflow system. They are not specific to any single product.</p>
+    <p>本文描述的模式适用于任何多渠道、长流程 AI Agent 或工作流系统，不特定于任何单一产品。</p>
+
+  </article>
+
+  <footer>
+    <a href="../">← 我的人工智障 / My A.I.</a> · <a href="https://github.com/lofder">@lofder</a>
+  </footer>
+</div>
+</body>
+</html>
