@@ -192,9 +192,10 @@
 
     <table>
       <tr><th style="width:30%">特性 / Feature</th><th>说明 / Description</th></tr>
+      <tr><td>Dot-Notation Naming</td><td>全部工具和 Prompt 采用 <code>dsers.{domain}.{action}</code> 分层命名（如 <code>dsers.product.import</code>、<code>dsers.store.push</code>），AI agent 可自动发现层级关系<br>All tools and prompts use hierarchical <code>dsers.{domain}.{action}</code> naming (e.g. <code>dsers.product.import</code>, <code>dsers.store.push</code>) so AI agents can navigate the tool tree</td></tr>
       <tr><td>MCP Annotations</td><td>7 个工具全部标注 <code>readOnlyHint</code>、<code>destructiveHint</code>、<code>idempotentHint</code>、<code>openWorldHint</code>，AI agent 可据此判断工具安全性<br>All 7 tools annotated with safety hints so AI agents can assess risk before calling</td></tr>
       <tr><td>AI-Friendly Errors</td><td>所有错误返回结构化 <code>{Error, Cause, Action}</code> 三段式，覆盖 15+ 错误场景<br>All errors return structured <code>{Error, Cause, Action}</code> covering 15+ error patterns</td></tr>
-      <tr><td>Prompt Templates</td><td>3 个预设工作流模板（快速导入 / 批量加价 / 多店铺推送），MCP 客户端可直接展示<br>3 built-in prompts (quick import / bulk pricing / multi-store push) for instant MCP client display</td></tr>
+      <tr><td>Prompt Templates</td><td>3 个预设工作流模板：<code>dsers.workflow.quick-import</code>（快速导入）/ <code>dsers.workflow.bulk-import</code>（批量加价）/ <code>dsers.workflow.multi-push</code>（多店铺推送），MCP 客户端可直接展示<br>3 built-in prompts: <code>dsers.workflow.quick-import</code> / <code>dsers.workflow.bulk-import</code> / <code>dsers.workflow.multi-push</code> for instant MCP client display</td></tr>
       <tr><td>大数字精度保护</td><td>DSers 19 位 ID 全链路 string 化处理，避免 JavaScript Number 精度丢失<br>19-digit DSers IDs handled as strings throughout to prevent JavaScript precision loss</td></tr>
       <tr><td>标题去重</td><td>规则引擎自动检测已有前缀/后缀，防止重复应用<br>Rule engine auto-detects existing prefix/suffix to prevent duplication on re-import</td></tr>
       <tr><td>全球 ID 解析</td><td>AliExpress <code>.us</code> URL 自动提取 <code>afTraceInfo</code> 全球产品 ID<br>AliExpress <code>.us</code> URLs auto-resolve global product ID from <code>afTraceInfo</code></td></tr>
