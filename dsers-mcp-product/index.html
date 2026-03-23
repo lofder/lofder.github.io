@@ -100,12 +100,12 @@
 
     <h2>三、解决方案 / Solution</h2>
 
-    <p>将 DSers 的商品导入全链路封装为 <strong>7 个 MCP（Model Context Protocol）工具</strong>，AI agent 通过自然语言指令调用，替代手动点击：</p>
-    <p>DSers' entire product import workflow wrapped into <strong>7 MCP tools</strong>. AI agents call them via natural language, replacing manual clicks:</p>
+    <p>将 DSers 的商品导入全链路封装为 <strong>7 个 MCP（Model Context Protocol）工具 + 4 个 Prompt 模板</strong>，AI agent 通过自然语言指令调用，替代手动点击：</p>
+    <p>DSers' entire product import workflow wrapped into <strong>7 MCP tools + 4 Prompt templates</strong>. AI agents call them via natural language, replacing manual clicks:</p>
 
     <table>
       <tr><th>MCP 工具</th><th>功能 / Function</th><th>替代操作 / Replaces</th></tr>
-      <tr><td><code>dsers.product.import</code></td><td>解析商品链接（单条/批量），应用规则，生成预览</td><td>找商品 + 导入 + 编辑</td></tr>
+      <tr><td><code>dsers.product.import</code></td><td>解析商品链接（单条/批量），应用规则，生成预览；支持 re-apply 模式更新规则无需重新导入</td><td>找商品 + 导入 + 编辑</td></tr>
       <tr><td><code>dsers.product.preview</code></td><td>推送前预览变更</td><td>检查编辑结果</td></tr>
       <tr><td><code>dsers.store.push</code></td><td>推送到店铺（单条/批量/多店铺）</td><td>推送 + 发布设置</td></tr>
       <tr><td><code>dsers.rules.validate</code></td><td>校验定价/内容规则</td><td>价格规则设置</td></tr>
@@ -195,10 +195,12 @@
       <tr><td>Dot-Notation Naming</td><td>全部工具和 Prompt 采用 <code>dsers.{domain}.{action}</code> 分层命名（如 <code>dsers.product.import</code>、<code>dsers.store.push</code>），AI agent 可自动发现层级关系<br>All tools and prompts use hierarchical <code>dsers.{domain}.{action}</code> naming (e.g. <code>dsers.product.import</code>, <code>dsers.store.push</code>) so AI agents can navigate the tool tree</td></tr>
       <tr><td>MCP Annotations</td><td>7 个工具全部标注 <code>readOnlyHint</code>、<code>destructiveHint</code>、<code>idempotentHint</code>、<code>openWorldHint</code>，AI agent 可据此判断工具安全性<br>All 7 tools annotated with safety hints so AI agents can assess risk before calling</td></tr>
       <tr><td>AI-Friendly Errors</td><td>所有错误返回结构化 <code>{Error, Cause, Action}</code> 三段式，覆盖 15+ 错误场景<br>All errors return structured <code>{Error, Cause, Action}</code> covering 15+ error patterns</td></tr>
-      <tr><td>Prompt Templates</td><td>3 个预设工作流模板：<code>dsers.workflow.quick-import</code>（快速导入）/ <code>dsers.workflow.bulk-import</code>（批量加价）/ <code>dsers.workflow.multi-push</code>（多店铺推送），MCP 客户端可直接展示<br>3 built-in prompts: <code>dsers.workflow.quick-import</code> / <code>dsers.workflow.bulk-import</code> / <code>dsers.workflow.multi-push</code> for instant MCP client display</td></tr>
+      <tr><td>Prompt Templates</td><td>4 个预设工作流模板：<code>dsers.workflow.quick-import</code>（快速导入）/ <code>dsers.workflow.bulk-import</code>（批量加价）/ <code>dsers.workflow.multi-push</code>（多店铺推送）/ <code>dsers.workflow.seo-optimize</code>（AI SEO 优化），MCP 客户端可直接展示<br>4 built-in prompts: <code>dsers.workflow.quick-import</code> / <code>dsers.workflow.bulk-import</code> / <code>dsers.workflow.multi-push</code> / <code>dsers.workflow.seo-optimize</code> for instant MCP client display</td></tr>
       <tr><td>大数字精度保护</td><td>DSers 19 位 ID 全链路 string 化处理，避免 JavaScript Number 精度丢失<br>19-digit DSers IDs handled as strings throughout to prevent JavaScript precision loss</td></tr>
       <tr><td>标题去重</td><td>规则引擎自动检测已有前缀/后缀，防止重复应用<br>Rule engine auto-detects existing prefix/suffix to prevent duplication on re-import</td></tr>
-      <tr><td>全球 ID 解析</td><td>AliExpress <code>.us</code> URL 自动提取 <code>afTraceInfo</code> 全球产品 ID<br>AliExpress <code>.us</code> URLs auto-resolve global product ID from <code>afTraceInfo</code></td></tr>
+      <tr><td>全球 ID 映射</td><td>AliExpress <code>.us</code> 全局 ID（3256…）自动映射到本地 ID（1005…），同时兼容 <code>/i/</code> 短链格式<br>AliExpress <code>.us</code> global IDs (3256…) auto-mapped to local IDs (1005…), also supports <code>/i/</code> short URL format</td></tr>
+      <tr><td>AE 授权检测</td><td>导入时自动检测 AliExpress 授权状态，过期时提供准确诊断和操作建议<br>Auto-detects AliExpress authorization expiry on import, provides precise diagnosis and re-auth guidance</td></tr>
+      <tr><td>Re-apply 模式</td><td><code>dsers.product.import</code> 支持 re-apply：传入 job_id 即可更新规则，无需重新从供应商导入<br><code>dsers.product.import</code> supports re-apply mode: pass a job_id to update rules without re-importing from the supplier</td></tr>
     </table>
 
     <h2>六、开发背景 / Background</h2>
@@ -219,8 +221,8 @@
 
     <p><span class="status-tag" style="background:#d1fae5;color:#065f46;">Released — Open Source</span></p>
 
-    <p>完整导入-编辑-推送链路已跑通。7 个工具 + 3 个 prompt 模板，全部带 MCP annotations，支持批量导入、多店铺推送（Shopify + Wix）、多来源混合、Shopify 运费模板自动发现、AI 友好错误提示。服务托管在 <a href="https://dsers-mcp-product.vercel.app/api/mcp">Vercel</a>，已发布到 <a href="https://smithery.ai/server/@dsersx/product-mcp">Smithery</a>（Free 计划 25K RPCs/月），也可从 <a href="https://github.com/lofder/dsers-mcp-product">GitHub</a> 克隆本地运行。同时提供 <a href="https://github.com/lofder/dsers-mcp-product-py">Python 版本</a>（维护模式）。</p>
-    <p>Full import-edit-push pipeline verified. 7 tools + 3 prompt templates, all with MCP annotations. Supports batch import, multi-store push (Shopify + Wix), mixed sources, Shopify shipping profile auto-discovery, and AI-friendly structured error messages. Hosted on <a href="https://dsers-mcp-product.vercel.app/api/mcp">Vercel</a>, published on <a href="https://smithery.ai/server/@dsersx/product-mcp">Smithery</a> (Free plan 25K RPCs/month), or clone from <a href="https://github.com/lofder/dsers-mcp-product">GitHub</a> to run locally. A <a href="https://github.com/lofder/dsers-mcp-product-py">Python version</a> is also available (maintenance mode).</p>
+    <p>完整导入-编辑-推送链路已跑通。7 个工具 + 4 个 prompt 模板，全部带 MCP annotations，支持批量导入、多店铺推送（Shopify + Wix）、多来源混合、Shopify 运费模板自动发现、AI 友好错误提示。新增 AliExpress .us 全局 ID 自动映射、授权状态检测、re-apply 模式、SEO 优化工作流。服务托管在 <a href="https://dsers-mcp-product.vercel.app/api/mcp">Vercel</a>，已发布到 <a href="https://smithery.ai/server/@dsersx/product-mcp">Smithery</a>（Free 计划 25K RPCs/月），也可从 <a href="https://github.com/lofder/dsers-mcp-product">GitHub</a> 克隆本地运行。同时提供 <a href="https://github.com/lofder/dsers-mcp-product-py">Python 版本</a>（维护模式）。</p>
+    <p>Full import-edit-push pipeline verified. 7 tools + 4 prompt templates, all with MCP annotations. Supports batch import, multi-store push (Shopify + Wix), mixed sources, Shopify shipping profile auto-discovery, and AI-friendly structured error messages. New: AliExpress .us global ID auto-mapping, authorization status detection, re-apply mode, and SEO optimization workflow. Hosted on <a href="https://dsers-mcp-product.vercel.app/api/mcp">Vercel</a>, published on <a href="https://smithery.ai/server/@dsersx/product-mcp">Smithery</a> (Free plan 25K RPCs/month), or clone from <a href="https://github.com/lofder/dsers-mcp-product">GitHub</a> to run locally. A <a href="https://github.com/lofder/dsers-mcp-product-py">Python version</a> is also available (maintenance mode).</p>
 
   </article>
 
