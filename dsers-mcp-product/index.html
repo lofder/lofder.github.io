@@ -24,6 +24,7 @@
       <span class="tag">Smithery</span>
       <span class="tag">AI Agent</span>
       <span class="tag">Batch</span>
+      <span class="tag">Accio</span>
     </div>
     <div class="date">2026.03</div>
   </div>
@@ -105,7 +106,7 @@
 
     <table>
       <tr><th>MCP 工具</th><th>功能 / Function</th><th>替代操作 / Replaces</th></tr>
-      <tr><td><code>dsers.product.import</code></td><td>解析商品链接（单条/批量），应用规则，生成预览；支持 re-apply 模式更新规则无需重新导入</td><td>找商品 + 导入 + 编辑</td></tr>
+      <tr><td><code>dsers.product.import</code></td><td>解析商品链接（单条/批量），应用规则，生成预览；支持 re-apply 模式更新规则无需重新导入；<strong>支持 Accio.com</strong>（阿里巴巴 AI 选品代理）分享链接：粘贴 URL 即可从查询参数解析商品，覆盖速卖通与阿里巴巴货源<br>Parses product URLs (single/batch), applies rules, generates preview; re-apply without re-import. <strong>Accio.com supported</strong> — Alibaba's AI sourcing agent: paste share links; product info extracted from URL params for AliExpress and Alibaba sources</td><td>找商品 + 导入 + 编辑</td></tr>
       <tr><td><code>dsers.product.preview</code></td><td>推送前预览变更</td><td>检查编辑结果</td></tr>
       <tr><td><code>dsers.store.push</code></td><td>推送到店铺（单条/批量/多店铺）</td><td>推送 + 发布设置</td></tr>
       <tr><td><code>dsers.rules.validate</code></td><td>校验定价/内容规则</td><td>价格规则设置</td></tr>
@@ -201,6 +202,7 @@
       <tr><td>全球 ID 映射</td><td>AliExpress <code>.us</code> 全局 ID（3256…）自动映射到本地 ID（1005…），同时兼容 <code>/i/</code> 短链格式<br>AliExpress <code>.us</code> global IDs (3256…) auto-mapped to local IDs (1005…), also supports <code>/i/</code> short URL format</td></tr>
       <tr><td>AE 授权检测</td><td>导入时自动检测 AliExpress 授权状态，过期时提供准确诊断和操作建议<br>Auto-detects AliExpress authorization expiry on import, provides precise diagnosis and re-auth guidance</td></tr>
       <tr><td>Re-apply 模式</td><td><code>dsers.product.import</code> 支持 re-apply：传入 job_id 即可更新规则，无需重新从供应商导入<br><code>dsers.product.import</code> supports re-apply mode: pass a job_id to update rules without re-importing from the supplier</td></tr>
+      <tr><td>Accio 平台整合 / Accio integration</td><td><strong>Accio.com</strong> 是阿里巴巴面向全球买家的 AI 选品与采购代理（AI business agent for product sourcing）。用户在 Accio 浏览商品后复制产品链接，粘贴到 MCP 工具即可；工具从 URL 查询参数中自动解析 <code>productId</code>、<code>ds</code> 等字段得到商品信息。同时支持通过 Accio 链接触达的<strong>速卖通与阿里巴巴</strong>货源。<strong>Zero-fetch</strong>：纯 URL 参数解析，无需对 Accio 或商品页发起额外 HTTP 请求。<br><strong>Accio.com</strong> is Alibaba's AI business agent for product sourcing. Users copy the product URL from Accio and paste it into the MCP tool; product info is auto-extracted from Accio URL parameters (<code>productId</code> + <code>ds</code>, etc.). Supports both <strong>AliExpress and Alibaba</strong> products surfaced via Accio. <strong>Zero-fetch</strong>: pure URL parsing — no extra network requests.</td></tr>
     </table>
 
     <h2>六、开发背景 / Background</h2>
